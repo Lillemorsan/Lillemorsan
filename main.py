@@ -18,7 +18,7 @@ HEIGHT = 700
 MARGIN = 10
 T_MARGIN = 100
 B_MARGIN = 100
-LR_MARGIN = 100
+LR_MARGIN = 125
 
 GREY = (70,70,80)
 GREEN = (0,160,0)
@@ -37,6 +37,13 @@ pygame.display.set_caption("Lettro")
 SQ_SIZE = (WIDTH-4*MARGIN-2*LR_MARGIN) // 5
 FONT = pygame.font.SysFont("free sans bold", SQ_SIZE)
 FONT_SMALL = pygame.font.SysFont("free sans bold", SQ_SIZE//2)
+
+# --------- Starta om-knapp ---------
+BUTTON_WIDTH = 200
+BUTTON_HEIGHT = 50
+BUTTON_COLOR = (0,160,0)
+BUTTON_TEXT_COLOR = (255, 255, 255)
+BUTTON_FONT = pygame.font.SysFont("free sans bold", 30)
 
 def determine_unguessed_letters(guesses):
     guessed_letters = "".join(guesses)
@@ -75,10 +82,14 @@ if __name__ == "__main__":
     while animating:
         screen.fill("white")
         
-        # rita ogissade bokstäver
-        letters = FONT_SMALL.render(UNGUESSED, False, GREY)
-        surface = letters.get_rect(center=(WIDTH//2, T_MARGIN//2))
-        screen.blit(letters, surface)
+        # rita ogissade bokstäver på två rader
+        split_index = len(UNGUESSED)//3
+        letters_top = FONT_SMALL.render(UNGUESSED[:split_index], False, GREY)
+        letters_bottom = FONT_SMALL.render(UNGUESSED[split_index:], False, GREY)
+        surface_top = letters_top.get_rect(center=(WIDTH//2, T_MARGIN//4))
+        surface_bottom = letters_bottom.get_rect(center=(WIDTH//2, T_MARGIN//2))
+        screen.blit(letters_top, surface_top)
+        screen.blit(letters_bottom, surface_bottom)
         
         # målar kuberna
         y = T_MARGIN
@@ -102,12 +113,25 @@ if __name__ == "__main__":
                     
                 x += SQ_SIZE + MARGIN
             y += SQ_SIZE + MARGIN
-        
+
+        # kontrollera om spelet är slut efter 6 gissningar
         if len(GUESSES) == 6 and GUESSES[5] != ANSWER:
             GAME_OVER = True
+
+        # ----------- Visa svar och knapp om spelet är slut -----------
+        if GAME_OVER:
+            # visa rätt ord ovanför knappen
             letters = FONT.render(ANSWER, False, GREY)
-            surface = letters.get_rect(center=(x+SQ_SIZE//2, HEIGHT-B_MARGIN//2-MARGIN))
+            surface = letters.get_rect(center=(WIDTH//2, HEIGHT - B_MARGIN//2 - BUTTON_HEIGHT - 30))
             screen.blit(letters, surface)
+
+            # rita starta om-knappen
+            button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
+            pygame.draw.rect(screen, BUTTON_COLOR, button_rect, border_radius=10)
+
+            button_text = BUTTON_FONT.render("Köra igen?!?", True, BUTTON_TEXT_COLOR)
+            text_rect = button_text.get_rect(center=button_rect.center)
+            screen.blit(button_text, text_rect)
         
         # uppdaterar skärmen
         pygame.display.flip()
@@ -136,3 +160,11 @@ if __name__ == "__main__":
                     INPUT = ""
                 elif len(INPUT) < 5 and not GAME_OVER:
                     INPUT += event.unicode.upper()
+            # ---------- Klick på starta om-knapp ----------
+            elif event.type == pygame.MOUSEBUTTONDOWN and GAME_OVER:
+                if button_rect.collidepoint(event.pos):
+                    ANSWER = random.choice(DICT_ANSWERS)
+                    GUESSES = []
+                    UNGUESSED = ALPHABET
+                    INPUT = ""
+                    GAME_OVER = False
