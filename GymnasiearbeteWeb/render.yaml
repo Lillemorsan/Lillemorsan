@@ -1,5 +1,0 @@
-services:
-  - type: static_site
-    name: gymnasiearbete-web
-    buildCommand: pip install -r requirements.txt && pygbag --build .
-    publishDir: build/web
