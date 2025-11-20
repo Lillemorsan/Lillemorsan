@@ -17,8 +17,8 @@ WIDTH = 600
 HEIGHT = 700
 MARGIN = 10
 T_MARGIN = 100
-B_MARGIN = 100
-LR_MARGIN = 125
+B_MARGIN = 125
+LR_MARGIN = 690
 
 GREY = (70,70,80)
 GREEN = (0,160,0)
@@ -33,11 +33,13 @@ GAME_OVER = False
 pygame.init()
 pygame.font.init()
 pygame.display.set_caption("Lettro")
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+WIDTH, HEIGHT = screen.get_size()
 background_image = pygame.image.load("mounteverest.jpg").convert()
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
-SQ_SIZE = (WIDTH-4*MARGIN-2*LR_MARGIN) // 5
+
+SQ_SIZE = 100
 FONT = pygame.font.SysFont("free sans bold", SQ_SIZE)
 FONT_SMALL = pygame.font.SysFont("free sans bold", SQ_SIZE//2)
 
@@ -133,7 +135,7 @@ if __name__ == "__main__":
             button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
             pygame.draw.rect(screen, BUTTON_COLOR, button_rect, border_radius=10)
 
-            button_text = BUTTON_FONT.render("Köra igen?!?", True, BUTTON_TEXT_COLOR)
+            button_text = BUTTON_FONT.render("Starta Om", True, BUTTON_TEXT_COLOR)
             text_rect = button_text.get_rect(center=button_rect.center)
             screen.blit(button_text, text_rect)
         
