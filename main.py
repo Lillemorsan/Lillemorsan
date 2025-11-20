@@ -33,6 +33,9 @@ GAME_OVER = False
 pygame.init()
 pygame.font.init()
 pygame.display.set_caption("Lettro")
+screen = pygame.display.set_mode((1000, 1000))
+background_image = pygame.image.load("mounteverest.jpg").convert()
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
 SQ_SIZE = (WIDTH-4*MARGIN-2*LR_MARGIN) // 5
 FONT = pygame.font.SysFont("free sans bold", SQ_SIZE)
@@ -80,7 +83,8 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 if __name__ == "__main__":
     animating = True
     while animating:
-        screen.fill("white")
+        # Rita bakgrunden först
+        screen.blit(background_image, (0, 0))
         
         # rita ogissade bokstäver på två rader
         split_index = len(UNGUESSED)//3
@@ -136,7 +140,7 @@ if __name__ == "__main__":
         # uppdaterar skärmen
         pygame.display.flip()
         
-        # spåra användar interactions
+        # spåra användarinteraktioner
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 animating = False
