@@ -22,7 +22,7 @@ LR_MARGIN = 125
 
 GREY = (70,70,80)
 GREEN = (0,160,0)
-PURPLE = (100,0,102)
+PURPLE = (67,0,90)
 
 INPUT = ""
 GUESSES = []
@@ -33,7 +33,7 @@ GAME_OVER = False
 pygame.init()
 pygame.font.init()
 pygame.display.set_caption("Lettro")
-screen = pygame.display.set_mode((1000, 1000))
+screen = pygame.display.set_mode((800, 600))
 background_image = pygame.image.load("mounteverest.jpg").convert()
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
