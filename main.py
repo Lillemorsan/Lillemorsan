@@ -39,8 +39,10 @@ background_image = pygame.image.load("mounteverest.jpg").convert()
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
 SQ_SIZE = 100
-FONT = pygame.font.SysFont("free sans bold", SQ_SIZE)
-FONT_SMALL = pygame.font.SysFont("free sans bold", SQ_SIZE//2)
+#bokstäver som man skriver storlek
+FONT = pygame.font.SysFont("free sans bold", 50)
+#tangentbord bokstäver storlek
+FONT_SMALL = pygame.font.SysFont("free sans bold", 25)
 
 # --------- Starta om-knapp ---------
 BUTTON_WIDTH = 200
