@@ -38,7 +38,6 @@ WIDTH, HEIGHT = screen.get_size()
 background_image = pygame.image.load("mounteverest.jpg").convert()
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
-
 SQ_SIZE = 100
 FONT = pygame.font.SysFont("free sans bold", SQ_SIZE)
 FONT_SMALL = pygame.font.SysFont("free sans bold", SQ_SIZE//2)
@@ -50,6 +49,21 @@ BUTTON_COLOR = (0,160,0)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_FONT = pygame.font.SysFont("free sans bold", 30)
 
+# --------- Tangentbord längst ner ---------
+KEYBOARD_LAYOUT = [
+    "QWERTYUIOPÅ",
+    "ASDFGHJKLÖÄ",
+    "ZXCVBNM"
+]
+KEY_RADIUS = 25
+KEY_SPACING_X = 10
+KEY_SPACING_Y = 10
+KEY_COLOR = (70, 70, 80)
+KEY_USED_COLOR = (40, 40, 50)
+KEY_PRESSED_COLOR = (100, 100, 100)
+LETTER_COLOR = (255, 255, 255)
+
+# ---- Funktioner ----
 def determine_unguessed_letters(guesses):
     guessed_letters = "".join(guesses)
     unguessed_letters = ""
@@ -76,28 +90,30 @@ def determine_color(guess, j):
             return PURPLE
     return GREY
 
+def keyboard_letter_color(letter):
+    for guess in GUESSES:
+        for i, l in enumerate(guess):
+            if l == letter:
+                if l == ANSWER[i]:
+                    return GREEN
+                elif l in ANSWER:
+                    return PURPLE
+    return KEY_COLOR if letter in UNGUESSED else KEY_USED_COLOR
+
 # skapa skärm
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 # -----------------------------------------
-# Direkt huvudloop för pygbag (main.js)
+# Direkt huvudloop
 # -----------------------------------------
 if __name__ == "__main__":
     animating = True
+    pressed_key = None
     while animating:
-        # Rita bakgrunden först
+        # Rita bakgrund
         screen.blit(background_image, (0, 0))
         
-        # rita ogissade bokstäver på två rader
-        split_index = len(UNGUESSED)//3
-        letters_top = FONT_SMALL.render(UNGUESSED[:split_index], False, GREY)
-        letters_bottom = FONT_SMALL.render(UNGUESSED[split_index:], False, GREY)
-        surface_top = letters_top.get_rect(center=(WIDTH//2, T_MARGIN//4))
-        surface_bottom = letters_bottom.get_rect(center=(WIDTH//2, T_MARGIN//2))
-        screen.blit(letters_top, surface_top)
-        screen.blit(letters_bottom, surface_bottom)
-        
-        # målar kuberna
+        # --------- Rita kuberna ----------
         y = T_MARGIN
         for i in range(6):
             x = LR_MARGIN
@@ -120,44 +136,65 @@ if __name__ == "__main__":
                 x += SQ_SIZE + MARGIN
             y += SQ_SIZE + MARGIN
 
-        # kontrollera om spelet är slut efter 6 gissningar
+        # --------- Rita tangentbordet längst ner ----------
+        key_rects = []
+        start_y = HEIGHT - B_MARGIN - 3*(2*KEY_RADIUS + KEY_SPACING_Y)
+        for row_index, row in enumerate(KEYBOARD_LAYOUT):
+            row_length = len(row)
+            start_x = (WIDTH - (row_length * (2*KEY_RADIUS + KEY_SPACING_X) - KEY_SPACING_X)) // 2
+            y = start_y + row_index * (2*KEY_RADIUS + KEY_SPACING_Y)
+            
+            for i, letter in enumerate(row):
+                x = start_x + i * (2*KEY_RADIUS + KEY_SPACING_X)
+                circle_rect = pygame.Rect(x, y, 2*KEY_RADIUS, 2*KEY_RADIUS)
+                key_rects.append((letter, circle_rect))
+                
+                color = KEY_PRESSED_COLOR if pressed_key == letter else keyboard_letter_color(letter)
+                pygame.draw.ellipse(screen, color, circle_rect)
+                
+                letter_surface = FONT_SMALL.render(letter, True, LETTER_COLOR)
+                letter_rect = letter_surface.get_rect(center=circle_rect.center)
+                screen.blit(letter_surface, letter_rect)
+
+        # --------- Rita Enter-knappen separat ----------
+        enter_rect = pygame.Rect(WIDTH//2 - 60, HEIGHT - B_MARGIN, 120, 40)
+        pygame.draw.rect(screen, KEY_COLOR, enter_rect, border_radius=8)
+        enter_surface = FONT_SMALL.render("ENTER", True, LETTER_COLOR)
+        enter_rect_text = enter_surface.get_rect(center=enter_rect.center)
+        screen.blit(enter_surface, enter_rect_text)
+
+        # --------- Kontrollera game over ----------
         if len(GUESSES) == 6 and GUESSES[5] != ANSWER:
             GAME_OVER = True
 
-        # ----------- Visa svar och knapp om spelet är slut -----------
         if GAME_OVER:
-            # visa rätt ord ovanför knappen
             letters = FONT.render(ANSWER, False, GREY)
             surface = letters.get_rect(center=(WIDTH//2, HEIGHT - B_MARGIN//2 - BUTTON_HEIGHT - 30))
             screen.blit(letters, surface)
 
-            # rita starta om-knappen
             button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
             pygame.draw.rect(screen, BUTTON_COLOR, button_rect, border_radius=10)
-
             button_text = BUTTON_FONT.render("Starta Om", True, BUTTON_TEXT_COLOR)
             text_rect = button_text.get_rect(center=button_rect.center)
             screen.blit(button_text, text_rect)
-        
-        # uppdaterar skärmen
+
         pygame.display.flip()
-        
-        # spåra användarinteraktioner
+
+        # --------- Händelsehantering ----------
+        pressed_key = None
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 animating = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     animating = False
-                if event.key == pygame.K_BACKSPACE:
-                    if len(INPUT) > 0:
-                        INPUT = INPUT[:-1]
-                elif event.key == pygame.K_RETURN:
-                    if len(INPUT) == 5 and INPUT:
-                        GUESSES.append(INPUT)
-                        UNGUESSED = determine_unguessed_letters(GUESSES)
-                        GAME_OVER = True if INPUT == ANSWER else False
-                        INPUT = ""
+                elif event.key == pygame.K_BACKSPACE and len(INPUT) > 0:
+                    INPUT = INPUT[:-1]
+                elif event.key == pygame.K_RETURN and len(INPUT) == 5:
+                    GUESSES.append(INPUT)
+                    UNGUESSED = determine_unguessed_letters(GUESSES)
+                    GAME_OVER = True if INPUT == ANSWER else False
+                    INPUT = ""
                 elif event.key == pygame.K_SPACE:
                     GAME_OVER = False
                     ANSWER = random.choice(DICT_ANSWERS)
@@ -166,11 +203,28 @@ if __name__ == "__main__":
                     INPUT = ""
                 elif len(INPUT) < 5 and not GAME_OVER:
                     INPUT += event.unicode.upper()
-            # ---------- Klick på starta om-knapp ----------
-            elif event.type == pygame.MOUSEBUTTONDOWN and GAME_OVER:
-                if button_rect.collidepoint(event.pos):
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+
+                if not GAME_OVER:
+                    # Klick på bokstäver
+                    for letter, rect in key_rects:
+                        if rect.collidepoint(mx, my) and len(INPUT) < 5 and letter in UNGUESSED:
+                            INPUT += letter
+                            pressed_key = letter
+                    # Klick på Enter-knappen
+                    if enter_rect.collidepoint(mx, my) and len(INPUT) == 5:
+                        GUESSES.append(INPUT)
+                        UNGUESSED = determine_unguessed_letters(GUESSES)
+                        GAME_OVER = True if INPUT == ANSWER else False
+                        INPUT = ""
+                        pressed_key = "ENTER"
+
+                # Klick på starta om-knapp
+                if GAME_OVER and button_rect.collidepoint((mx, my)):
                     ANSWER = random.choice(DICT_ANSWERS)
                     GUESSES = []
                     UNGUESSED = ALPHABET
                     INPUT = ""
                     GAME_OVER = False
+
