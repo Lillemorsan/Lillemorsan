@@ -2,6 +2,17 @@
 import random
 import pygame
 import pygbag
+import time
+
+# Fixa att random alltid seedas vid sidstart
+try:
+    # ta tid i millisekunder från javascript
+    seed = pygbag.web.loop.time()
+except:
+    # fallback om programmet körs lokalt
+    seed = time.time()
+
+random.seed(seed)
 
 def load_dict(file_name):
     with open(file_name, encoding="utf-8") as file:
@@ -229,4 +240,5 @@ if __name__ == "__main__":
                     UNGUESSED = ALPHABET
                     INPUT = ""
                     GAME_OVER = False
+
 
