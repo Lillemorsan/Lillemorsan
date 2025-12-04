@@ -171,10 +171,10 @@ if __name__ == "__main__":
 
         if GAME_OVER:
             letters = FONT.render(ANSWER, False, GREY)
-            surface = letters.get_rect(center=(WIDTH//2, HEIGHT - B_MARGIN//2 - BUTTON_HEIGHT - 30))
+            surface = letters.get_rect(center=(WIDTH//2 , HEIGHT - T_MARGIN//2 - BUTTON_HEIGHT - 930))
             screen.blit(letters, surface)
 
-            button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
+            button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT-10 - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
             pygame.draw.rect(screen, BUTTON_COLOR, button_rect, border_radius=10)
             button_text = BUTTON_FONT.render("Starta Om", True, BUTTON_TEXT_COLOR)
             text_rect = button_text.get_rect(center=button_rect.center)
