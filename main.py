@@ -4,12 +4,10 @@ import pygame
 import pygbag
 import time
 
-# Fixa att random alltid seedas vid sidstart
+# Seedning
 try:
-    # ta tid i millisekunder från javascript
     seed = pygbag.web.loop.time()
 except:
-    # fallback om programmet körs lokalt
     seed = time.time()
 
 random.seed(seed)
@@ -50,24 +48,22 @@ background_image = pygame.image.load("mounteverest.jpg").convert()
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 
 SQ_SIZE = 100
-#bokstäver som man skriver storlek
 FONT = pygame.font.SysFont("free sans bold", 50)
-#tangentbord bokstäver storlek
 FONT_SMALL = pygame.font.SysFont("free sans bold", 25)
 
-# --------- Starta om-knapp ---------
 BUTTON_WIDTH = 200
 BUTTON_HEIGHT = 50
 BUTTON_COLOR = (0,160,0)
 BUTTON_TEXT_COLOR = (255, 255, 255)
 BUTTON_FONT = pygame.font.SysFont("free sans bold", 30)
 
-# --------- Tangentbord längst ner ---------
+# Tangentbordslayout
 KEYBOARD_LAYOUT = [
     "QWERTYUIOPÅ",
     "ASDFGHJKLÖÄ",
     "ZXCVBNM"
 ]
+
 KEY_RADIUS = 25
 KEY_SPACING_X = 10
 KEY_SPACING_Y = 10
@@ -77,13 +73,10 @@ KEY_PRESSED_COLOR = (100, 100, 100)
 LETTER_COLOR = (255, 255, 255)
 
 # ---- Funktioner ----
+
 def determine_unguessed_letters(guesses):
     guessed_letters = "".join(guesses)
-    unguessed_letters = ""
-    for letter in ALPHABET:
-        if letter not in guessed_letters:
-            unguessed_letters += letter
-    return unguessed_letters
+    return "".join([l for l in ALPHABET if l not in guessed_letters])
 
 def determine_color(guess, j):
     letter = guess[j]
@@ -91,154 +84,171 @@ def determine_color(guess, j):
         return GREEN
     elif letter in ANSWER:
         n_target = ANSWER.count(letter)
-        n_correct = 0
-        n_occurrence = 0
-        for i in range(5):
-            if guess[i] == letter:
-                if i <= j:
-                    n_occurrence += 1
-                if letter == ANSWER[i]:
-                    n_correct += 1
+        n_correct = sum(1 for i in range(5) if guess[i] == ANSWER[i] and guess[i] == letter)
+        n_occurrence = sum(1 for i in range(j+1) if guess[i] == letter)
         if n_target - n_correct - n_occurrence >= 0:
             return PURPLE
     return GREY
 
+# ---- Wordle-korrekt färglogik ----
 def keyboard_letter_color(letter):
+    best_color = KEY_COLOR
     for guess in GUESSES:
         for i, l in enumerate(guess):
             if l == letter:
                 if l == ANSWER[i]:
                     return GREEN
                 elif l in ANSWER:
-                    return PURPLE
-    return KEY_COLOR if letter in UNGUESSED else KEY_USED_COLOR
+                    best_color = PURPLE
+                else:
+                    best_color = KEY_USED_COLOR
+    return best_color
 
-# skapa skärm
+# Starta skärm
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 # -----------------------------------------
-# Direkt huvudloop
+# Huvudloop
 # -----------------------------------------
 if __name__ == "__main__":
     animating = True
     pressed_key = None
+
     while animating:
-        # Rita bakgrund
         screen.blit(background_image, (0, 0))
-        
-        # --------- Rita kuberna ----------
+
+        # --------- Rita rutorna ----------
         y = T_MARGIN
         for i in range(6):
             x = LR_MARGIN
             for j in range(5):
                 square = pygame.Rect(x, y, SQ_SIZE, SQ_SIZE)
                 pygame.draw.rect(screen, GREY, square, width=2, border_radius=7)
-                
+
                 if i < len(GUESSES):
                     color = determine_color(GUESSES[i], j)
                     pygame.draw.rect(screen, color, square, border_radius=7)
-                    letter = FONT.render(GUESSES[i][j], False, (255,255,255))
-                    surface = letter.get_rect(center=(x+SQ_SIZE//2, y+SQ_SIZE//2))
-                    screen.blit(letter, surface)
-                
+                    letter = FONT.render(GUESSES[i][j], True, (255,255,255))
+                    screen.blit(letter, letter.get_rect(center=square.center))
+
                 if i == len(GUESSES) and j < len(INPUT):
-                    letter = FONT.render(INPUT[j], False, GREY)
-                    surface = letter.get_rect(center=(x+SQ_SIZE//2, y+SQ_SIZE//2))
-                    screen.blit(letter, surface)
-                    
+                    letter = FONT.render(INPUT[j], True, GREY)
+                    screen.blit(letter, letter.get_rect(center=square.center))
+
                 x += SQ_SIZE + MARGIN
             y += SQ_SIZE + MARGIN
 
-        # --------- Rita tangentbordet längst ner ----------
+        # --------- Rita tangentbordet ----------
         key_rects = []
         start_y = HEIGHT - B_MARGIN - 3*(2*KEY_RADIUS + KEY_SPACING_Y)
+
         for row_index, row in enumerate(KEYBOARD_LAYOUT):
             row_length = len(row)
-            start_x = (WIDTH - (row_length * (2*KEY_RADIUS + KEY_SPACING_X) - KEY_SPACING_X)) // 2
+            start_x = (WIDTH - (row_length * (2*KEY_RADIUS + KEY_SPACING_X)
+                     - KEY_SPACING_X)) // 2
             y = start_y + row_index * (2*KEY_RADIUS + KEY_SPACING_Y)
-            
+
             for i, letter in enumerate(row):
                 x = start_x + i * (2*KEY_RADIUS + KEY_SPACING_X)
-                circle_rect = pygame.Rect(x, y, 2*KEY_RADIUS, 2*KEY_RADIUS)
-                key_rects.append((letter, circle_rect))
-                
+                rect = pygame.Rect(x, y, 2*KEY_RADIUS, 2*KEY_RADIUS)
+                key_rects.append((letter, rect))
+
                 color = KEY_PRESSED_COLOR if pressed_key == letter else keyboard_letter_color(letter)
-                pygame.draw.ellipse(screen, color, circle_rect)
-                
-                letter_surface = FONT_SMALL.render(letter, True, LETTER_COLOR)
-                letter_rect = letter_surface.get_rect(center=circle_rect.center)
-                screen.blit(letter_surface, letter_rect)
+                pygame.draw.ellipse(screen, color, rect)
 
-        # --------- Rita Enter-knappen separat ----------
-        enter_rect = pygame.Rect(WIDTH//2 - 60, HEIGHT - B_MARGIN, 120, 40)
-        pygame.draw.rect(screen, KEY_COLOR, enter_rect, border_radius=8)
-        enter_surface = FONT_SMALL.render("ENTER", True, LETTER_COLOR)
-        enter_rect_text = enter_surface.get_rect(center=enter_rect.center)
-        screen.blit(enter_surface, enter_rect_text)
+                tex = FONT_SMALL.render(letter, True, LETTER_COLOR)
+                screen.blit(tex, tex.get_rect(center=rect.center))
 
-        # --------- Kontrollera game over ----------
+        # --------- ENTER ----------
+        enter_rect = pygame.Rect(WIDTH//2 - 140, HEIGHT - B_MARGIN, 120, 40)
+        enter_color = KEY_PRESSED_COLOR if pressed_key == "ENTER" else KEY_COLOR
+        pygame.draw.rect(screen, enter_color, enter_rect, border_radius=8)
+        enter_tex = FONT_SMALL.render("ENTER", True, LETTER_COLOR)
+        screen.blit(enter_tex, enter_tex.get_rect(center=enter_rect.center))
+
+        # --------- DELETE ----------
+        delete_rect = pygame.Rect(WIDTH//2 + 20, HEIGHT - B_MARGIN, 120, 40)
+        delete_color = KEY_PRESSED_COLOR if pressed_key == "DELETE" else KEY_COLOR
+        pygame.draw.rect(screen, delete_color, delete_rect, border_radius=8)
+        delete_tex = FONT_SMALL.render("DELETE", True, LETTER_COLOR)
+        screen.blit(delete_tex, delete_tex.get_rect(center=delete_rect.center))
+
+        # --------- Game over ----------
         if len(GUESSES) == 6 and GUESSES[5] != ANSWER:
             GAME_OVER = True
 
         if GAME_OVER:
-            letters = FONT.render(ANSWER, False, GREY)
-            surface = letters.get_rect(center=(WIDTH//2 , HEIGHT - T_MARGIN//2 - BUTTON_HEIGHT - 930))
-            screen.blit(letters, surface)
+            ans_tex = FONT.render(ANSWER, True, GREY)
+            screen.blit(ans_tex, ans_tex.get_rect(center=(WIDTH//2 , 75)))
 
-            button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2, HEIGHT-10 - B_MARGIN//2, BUTTON_WIDTH, BUTTON_HEIGHT)
+            button_rect = pygame.Rect((WIDTH - BUTTON_WIDTH)//2,
+                                      HEIGHT - 10 - B_MARGIN//2,
+                                      BUTTON_WIDTH, BUTTON_HEIGHT)
+
             pygame.draw.rect(screen, BUTTON_COLOR, button_rect, border_radius=10)
-            button_text = BUTTON_FONT.render("Starta Om", True, BUTTON_TEXT_COLOR)
-            text_rect = button_text.get_rect(center=button_rect.center)
-            screen.blit(button_text, text_rect)
+            txt = BUTTON_FONT.render("Starta Om", True, BUTTON_TEXT_COLOR)
+            screen.blit(txt, txt.get_rect(center=button_rect.center))
 
         pygame.display.flip()
 
-        # --------- Händelsehantering ----------
+        # --------- Events ----------
         pressed_key = None
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 animating = False
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     animating = False
+
                 elif event.key == pygame.K_BACKSPACE and len(INPUT) > 0:
                     INPUT = INPUT[:-1]
+
                 elif event.key == pygame.K_RETURN and len(INPUT) == 5:
                     GUESSES.append(INPUT)
                     UNGUESSED = determine_unguessed_letters(GUESSES)
-                    GAME_OVER = True if INPUT == ANSWER else False
+                    GAME_OVER = INPUT == ANSWER
                     INPUT = ""
+
                 elif event.key == pygame.K_SPACE:
-                    GAME_OVER = False
                     ANSWER = random.choice(DICT_ANSWERS)
                     GUESSES = []
-                    UNGUESSED = ALPHABET
                     INPUT = ""
+                    UNGUESSED = ALPHABET
+                    GAME_OVER = False
+
                 elif len(INPUT) < 5 and not GAME_OVER:
                     INPUT += event.unicode.upper()
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
 
                 if not GAME_OVER:
                     # Klick på bokstäver
                     for letter, rect in key_rects:
-                        if rect.collidepoint(mx, my) and len(INPUT) < 5 and letter in UNGUESSED:
+                        if rect.collidepoint(mx, my) and len(INPUT) < 5:
                             INPUT += letter
                             pressed_key = letter
-                    # Klick på Enter-knappen
+
+                    # ENTER
                     if enter_rect.collidepoint(mx, my) and len(INPUT) == 5:
                         GUESSES.append(INPUT)
                         UNGUESSED = determine_unguessed_letters(GUESSES)
-                        GAME_OVER = True if INPUT == ANSWER else False
+                        GAME_OVER = INPUT == ANSWER
                         INPUT = ""
                         pressed_key = "ENTER"
 
-                # Klick på starta om-knapp
+                    # DELETE
+                    if delete_rect.collidepoint(mx, my) and len(INPUT) > 0:
+                        INPUT = INPUT[:-1]
+                        pressed_key = "DELETE"
+
+                # Starta om-knapp
                 if GAME_OVER and button_rect.collidepoint((mx, my)):
                     ANSWER = random.choice(DICT_ANSWERS)
                     GUESSES = []
                     UNGUESSED = ALPHABET
                     INPUT = ""
                     GAME_OVER = False
-
 
