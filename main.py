@@ -20,6 +20,14 @@ def load_dict(file_name):
 DICT_ANSWERS = load_dict("svenska_5bokstaver.txt")
 ANSWER = random.choice(DICT_ANSWERS)
 
+# ---------------- RESET FUNKTION (NY) ----------------
+def reset_game():
+    global INPUT, GUESSES, GAME_OVER, ANSWER
+    INPUT = ""
+    GUESSES = []
+    GAME_OVER = False
+    ANSWER = random.choice(DICT_ANSWERS)
+
 # ---------------- Pygame init ----------------
 pygame.init()
 pygame.font.init()
@@ -65,8 +73,8 @@ def calculate_layout():
     available_h = HEIGHT - TOP_MARGIN - BOTTOM_MARGIN
     available_w = WIDTH * 0.9
 
-    MAX_SQ_SIZE = 70   # stoppar gigantiska rutor på dator
-    MIN_SQ_SIZE = 45   # minsta storlek på mobil
+    MAX_SQ_SIZE = 70
+    MIN_SQ_SIZE = 45
 
     SQ_SIZE = min(
         available_w // 5,
@@ -116,6 +124,7 @@ def keyboard_letter_color(letter):
 # HUVUDLOOP
 # =================================================
 running = True
+restart_rect = pygame.Rect(0,0,0,0)  # NY
 
 while running:
     screen.blit(background_image, (0, 0))
@@ -184,10 +193,22 @@ while running:
     screen.blit(FONT_SMALL.render("DELETE", True, WHITE),
                 FONT_SMALL.render("DELETE", True, WHITE).get_rect(center=delete_rect.center))
 
-    # -------- GAME OVER (visa ordet) --------
+    # -------- GAME OVER --------
     if GAME_OVER:
         ans = FONT.render(ANSWER, True, GREY)
         screen.blit(ans, ans.get_rect(center=(WIDTH//2, TOP_MARGIN//2)))
+
+        # -------- RESTART KNAPP (NY) --------
+        restart_rect = pygame.Rect(
+            WIDTH//2 - BUTTON_WIDTH//2,
+            TOP_MARGIN//2 + 40,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT
+        )
+
+        pygame.draw.rect(screen, GREY, restart_rect, border_radius=8)
+        screen.blit(FONT_SMALL.render("RESTART", True, WHITE),
+                    FONT_SMALL.render("RESTART", True, WHITE).get_rect(center=restart_rect.center))
 
     pygame.display.flip()
 
@@ -229,3 +250,8 @@ while running:
             if delete_rect.collidepoint(mx, my) and INPUT:
                 INPUT = INPUT[:-1]
 
+        # -------- RESTART CLICK (NY) --------
+        elif event.type == pygame.MOUSEBUTTONDOWN and GAME_OVER:
+            mx, my = event.pos
+            if restart_rect.collidepoint(mx, my):
+                reset_game()
